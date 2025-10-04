@@ -9,7 +9,7 @@ const conn = new Redis({
   port: Number(process.env.REDIS_PORT) || 6379,
   username: process.env.REDIS_USER,
   password: process.env.REDIS_PASSWORD!,
-  tls: {},
+  tls: { rejectUnauthorized: false },
   maxRetriesPerRequest: null,
 });
 
