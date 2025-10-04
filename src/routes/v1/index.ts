@@ -9,7 +9,7 @@ const conn = new Redis({
   port: Number(process.env.REDIS_PORT) || 6379,
   username: process.env.REDIS_USER,
   password: process.env.REDIS_PASSWORD!,
-  tls: {},
+  tls: { rejectUnauthorized: false },
   maxRetriesPerRequest: null,
 });
 
@@ -24,11 +24,16 @@ const v1Routes: FastifyPluginAsyncZod = async (fastify) => {
   await sec.start();
   const control = new Control(sec, conn);
 
-  fastify.get('/healthz', async function handler(_, reply) {
-    reply.code(200).send();
+  fastify.get('/health', async function handler(_, reply) {
+    if (conn.status === 'ready') {
+      reply.code(200).send();
+    }
+    reply.code(500).send();
   });
 
   fastify.addHook('preHandler', async (request, reply) => {
+    if (request.url === '/api/v1/health') return;
+
     const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return reply
