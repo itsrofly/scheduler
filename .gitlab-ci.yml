@@ -1,0 +1,81 @@
+stages:
+  - build
+  - deploy
+
+release_job:
+  stage: build
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  tags:
+    - docker
+  before_script:
+    - apk update && apk add git
+  script:
+    - |
+      # Get latest tag
+      LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "development-v0.0.0")
+      LATEST_TAG=$(echo "$LATEST_TAG" | sed 's/.*-v//; s/^v//')
+      if [[ ! "$LATEST_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        LATEST_TAG="0.0.0"
+      fi
+
+      MAJOR=$(echo $LATEST_TAG | cut -d. -f1)
+      MINOR=$(echo $LATEST_TAG | cut -d. -f2)
+      PATCH=$(echo $LATEST_TAG | cut -d. -f3)
+
+      # Increment version based on commit message
+      if [[ "$CI_COMMIT_TITLE" =~ [Ff]ix ]]; then PATCH=$((PATCH + 1)); fi
+      if [[ "$CI_COMMIT_TITLE" =~ [Ff]eature ]]; then MINOR=$((MINOR + 1)); fi
+      if [[ "$CI_COMMIT_TITLE" =~ [Mm]ajor ]]; then MAJOR=$((MAJOR + 1)); fi
+
+      NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+
+      echo "LATEST_TAG=$LATEST_TAG" > version.env
+      echo "NEW_VERSION=$NEW_VERSION" >> version.env
+
+      # Create release if version changed
+      if [ "$NEW_VERSION" != "$LATEST_TAG" ]; then
+        /usr/local/bin/release-cli create --description "$CI_COMMIT_TITLE" --tag-name "development-v$NEW_VERSION" --ref "$CI_COMMIT_SHA"
+      else
+        echo "No version change. Skipping tag creation."
+      fi
+
+  artifacts:
+    paths:
+      - version.env
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "development/release"'
+
+deploy:
+  stage: deploy
+  image: docker:latest
+  tags:
+    - docker
+  services:
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ""
+  needs:
+    - job: release_job
+      artifacts: true
+  script:
+    - echo "Checking if there's a new version to deploy..."
+    - source version.env
+    - |
+      if [ -z "$NEW_VERSION" ] || [ "$NEW_VERSION" == "$LATEST_TAG" ]; then
+        echo "No new version detected. Skipping deployment."
+        exit 0
+      fi
+
+      echo "Deploying Docker image version $NEW_VERSION..."
+      docker login -u "${DOCKER_REGISTRY_USER}" -p "${DOCKER_REGISTRY_PASSWORD}" "${DOCKER_REGISTRY}"
+
+      git fetch --tags --force origin
+      git checkout -f "development-v${NEW_VERSION}"
+
+      docker build -t "${DOCKER_REGISTRY}/${CI_PROJECT_PATH}:development-v${NEW_VERSION}" .
+      docker push "${DOCKER_REGISTRY}/${CI_PROJECT_PATH}:development-v${NEW_VERSION}"
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "development/release"'

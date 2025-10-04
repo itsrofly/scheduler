@@ -1,0 +1,29 @@
+{
+  "name": "control-flow",
+  "types": "index.d.ts",
+  "packageManager": "yarn@4.9.2",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node-dev --respawn --transpile-only index.ts",
+    "start": "node dist/index.js",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org hichbox --project control-flow ./dist && sentry-cli sourcemaps upload --org hichbox --project control-flow ./dist"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "prettier": "^3.6.2",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@sentry/cli": "^2.55.0",
+    "@sentry/node": "^10.15.0",
+    "bullmq": "^5.58.9",
+    "dotenv": "^17.2.2",
+    "fastify": "^5.6.1",
+    "fastify-type-provider-zod": "^6.0.0",
+    "ioredis": "^5.8.0",
+    "jose": "^6.1.0",
+    "zod": "^4.1.11"
+  }
+}
