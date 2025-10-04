@@ -6,8 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile
     image: control-flow:latest
-    env_file:
-      - ./src/.env
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-localhost}
+      - REDIS_USER=${REDIS_USER:-default}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - SENTRY_DNS=${SENTRY_DNS:-}
     ports:
       - "3000:3000"
     healthcheck:
