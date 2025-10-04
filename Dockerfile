@@ -45,6 +45,4 @@ RUN yarn workspaces focus --all --production
 # Copy build output
 COPY --from=builder /usr/src/app/dist ./dist
 
-# Expose application port and define entrypoint
-EXPOSE 3000
 CMD ["node", "dist/index.js"]
