@@ -4,12 +4,13 @@ import messagesRoutes from './messages';
 import { Security } from '../../utils/security';
 import { Control } from '../../utils/control';
 
+const isTLS = process.env.REDIS_TLS === 'true';
 const conn = new Redis({
   host: process.env.REDIS_HOST!,
   port: Number(process.env.REDIS_PORT) || 6379,
   username: process.env.REDIS_USER,
   password: process.env.REDIS_PASSWORD!,
-  tls: { rejectUnauthorized: false },
+  ...(isTLS ? { tls: {} } : {}),
   maxRetriesPerRequest: null,
 });
 
