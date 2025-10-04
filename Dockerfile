@@ -45,5 +45,5 @@ RUN yarn workspaces focus --all --production
 # Copy build output
 COPY --from=builder /usr/src/app/dist ./dist
 
-EXPOSE 3000
+EXPOSE 4000
 CMD ["node", "dist/index.js"]
