@@ -1,22 +1,38 @@
 services:
+  redis:
+    image: redis:latest
+    profiles: ["local"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   control-flow:
     build:
       context: .
       dockerfile: Dockerfile
     image: control-flow:latest
+    profiles: ["only-service", "local"]
     environment:
-      - REDIS_HOST=${REDIS_HOST:-localhost}
+      - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_USER=${REDIS_USER:-default}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_TLS=${REDIS_TLS:-true}
       - SENTRY_DNS=${SENTRY_DNS:-}
     healthcheck:
       test:
-        ["CMD-SHELL", "curl -f http://localhost:4000/api/v1/health || exit 1"]
+        ["CMD-SHELL", "curl -f http://localhost:3000/api/v1/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
     ports:
-      - "4001:4000"
+      - "3000:3000"
     restart: on-failure
+
+volumes:
+  redis-data:
