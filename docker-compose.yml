@@ -27,8 +27,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    ports:
-      - "3000:3000"
     restart: on-failure
 
 volumes:
