@@ -1,4 +1,8 @@
-name: Release and Deploy
+# put this at top of the workflow file (above on:, jobs:)
+permissions:
+  contents: write    # needed to push tags and create releases
+  packages: write    # needed if pushing packages/images
+  id-token: write    # optional, for OIDC if you need it
 
 on:
   push:
@@ -7,64 +11,93 @@ on:
 
 jobs:
   release:
-    name: Create Release and Push Docker Image
+    name: Create tag + Release + push image
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
       latest_tag: ${{ steps.version.outputs.latest_tag }}
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # needed for tags
+          fetch-depth: 0
 
       - name: Determine next version
         id: version
         run: |
-          # Get latest tag
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "development-v0.0.0")
           LATEST_TAG=$(echo "$LATEST_TAG" | sed 's/.*-v//; s/^v//')
           if [[ ! "$LATEST_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             LATEST_TAG="0.0.0"
           fi
-
           MAJOR=$(echo $LATEST_TAG | cut -d. -f1)
           MINOR=$(echo $LATEST_TAG | cut -d. -f2)
           PATCH=$(echo $LATEST_TAG | cut -d. -f3)
-
           COMMIT_TITLE=$(git log -1 --pretty=%s)
-
           if [[ "$COMMIT_TITLE" =~ [Ff]ix ]]; then PATCH=$((PATCH + 1)); fi
           if [[ "$COMMIT_TITLE" =~ [Ff]eature ]]; then MINOR=$((MINOR + 1)); fi
           if [[ "$COMMIT_TITLE" =~ [Mm]ajor ]]; then MAJOR=$((MAJOR + 1)); fi
-
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "commit_title=$COMMIT_TITLE" >> $GITHUB_ENV
 
-      - name: Create GitHub release if version changed
+      - name: Create tag and release via API when version changed
         if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: development-v${{ steps.version.outputs.new_version }}
-          name: development-v${{ steps.version.outputs.new_version }}
-          body: ${{ env.commit_title }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}  # PAT with repo scope
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          TAG: development-v${{ steps.version.outputs.new_version }}
+          BODY: ${{ env.commit_title }}
+        run: |
+          set -e
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
 
-      - name: Log in to GitHub Container Registry
+          # make origin use GITHUB_TOKEN so we can push the tag
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git
+
+          # create annotated tag if missing
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git tag -a "$TAG" -m "$BODY"
+          fi
+
+          # push tags
+          git push origin --tags
+
+          # create release via REST API using GITHUB_TOKEN
+          PAYLOAD=$(jq -n --arg t "$TAG" --arg s "$SHA" --arg n "$TAG" --arg b "$BODY" \
+            '{ tag_name: $t, target_commitish: $s, name: $n, body: $b, draft: false, prerelease: false }')
+          HTTP=$(curl -s -o /tmp/resp -w "%{http_code}" -X POST \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${REPO}/releases" \
+            -d "$PAYLOAD")
+          if [ "$HTTP" -ge 200 ] && [ "$HTTP" -lt 300 ]; then
+            echo "Release created"
+          else
+            echo "Release API returned $HTTP"
+            cat /tmp/resp
+            exit 1
+          fi
+
+      - name: Log in to GHCR
+        if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image to GHCR
         if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
         run: |
+          NEW_VERSION=${{ steps.version.outputs.new_version }}
+          IMAGE=ghcr.io/${{ github.repository }}:development-v${NEW_VERSION}
           git fetch --tags --force origin
-          git checkout -f "development-v${{ steps.version.outputs.new_version }}"
-          docker build -t ghcr.io/${{ github.repository }}:development-v${{ steps.version.outputs.new_version }} .
-          docker push ghcr.io/${{ github.repository }}:development-v${{ steps.version.outputs.new_version }}
+          git checkout -f "development-v${NEW_VERSION}"
+          docker build -t "${IMAGE}" .
+          docker push "${IMAGE}"
