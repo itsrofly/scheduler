@@ -90,7 +90,7 @@ class Control {
         );
 
         try {
-          const jwt = this.sec.signJWT(message.url, message.body);
+          const jwt = await this.sec.signJWT(message.url, message.body);
 
           const response = await fetch(message.url, {
             method: message.method,
