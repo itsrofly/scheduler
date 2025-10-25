@@ -14,11 +14,7 @@ services:
     build: .
     profiles: ["only-service", "local"]
     environment:
-      - REDIS_HOST=${REDIS_HOST:-redis}
-      - REDIS_USER=${REDIS_USER:-default}
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-      - REDIS_PORT=${REDIS_PORT:-6379}
-      - REDIS_TLS=${REDIS_TLS:-false}
+      - REDIS_URL=${REDIS_URL:-"rediss://"}
       - SENTRY_DNS=${SENTRY_DNS:-}
     healthcheck:
       test:

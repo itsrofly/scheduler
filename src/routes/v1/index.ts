@@ -4,15 +4,10 @@ import messagesRoutes from './messages';
 import { Security } from '../../utils/security';
 import { Control } from '../../utils/control';
 
-const isTLS = process.env.REDIS_TLS === 'true';
-const conn = new Redis({
-  host: process.env.REDIS_HOST!,
-  port: Number(process.env.REDIS_PORT) || 6379,
-  username: process.env.REDIS_USER,
-  password: process.env.REDIS_PASSWORD!,
-  ...(isTLS ? { tls: {} } : {}),
-  maxRetriesPerRequest: null,
-});
+const REDIS_URL = process.env.REDIS_URL;
+if (!REDIS_URL) throw new Error('REDIS_URL is not defined');
+
+const conn = new Redis(REDIS_URL);
 
 declare module 'fastify' {
   interface FastifyRequest {
