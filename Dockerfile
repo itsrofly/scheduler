@@ -4,7 +4,8 @@
 FROM node:20-alpine AS base
 
 # Enable Corepack and activate specified Yarn version
-RUN corepack enable \
+RUN apk add --no-cache bash python3 \
+    && corepack enable \
     && corepack prepare yarn@4.9.2 --activate
 
 # Define working directory
