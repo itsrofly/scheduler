@@ -9,6 +9,8 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    networks:
+      - default
 
   control-flow:
     build: .
@@ -26,6 +28,8 @@ services:
     ports:
       - "3000:3000"
     restart: on-failure
+    networks:
+      - default
 
 networks:
   default:
