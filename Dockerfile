@@ -4,9 +4,16 @@
 FROM node:20-alpine AS base
 
 # Enable Corepack and activate specified Yarn version
-RUN apk add --no-cache bash python3 \
+RUN set -ex \
+    && apk add --no-cache bash python3 \
+    && node -v \
+    && npm -v \
+    && which corepack || true \
+    && corepack --version || true \
     && corepack enable \
-    && corepack prepare yarn@4.9.2 --activate
+    && corepack prepare yarn@4.9.2 --activate \
+    && corepack --version \
+    && yarn -v
 
 # Define working directory
 WORKDIR /usr/src/app
