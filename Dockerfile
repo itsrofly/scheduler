@@ -1,16 +1,11 @@
-# syntax=docker/dockerfile:1.4
-
-ARG NODE_IMAGE=node:20-alpine
-ARG YARN_VERSION=4.9.2
-
 #####################################
 # Base stage: setup Corepack, workdir, and manifest
 #####################################
-FROM ${NODE_IMAGE} AS base
+FROM node:20-alpine AS base
 
 # Enable Corepack and activate specified Yarn version
 RUN corepack enable \
-    && corepack prepare yarn@${YARN_VERSION} --activate
+    && corepack prepare yarn@4.9.2 --activate
 
 # Define working directory
 WORKDIR /usr/src/app
