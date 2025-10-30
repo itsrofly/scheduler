@@ -27,5 +27,10 @@ services:
       - "3000:3000"
     restart: on-failure
 
+networks:
+  default:
+    external: true
+    name: hichbox_dev_network
+
 volumes:
   redis-data:
