@@ -1,8 +1,8 @@
 # put this at top of the workflow file (above on:, jobs:)
 permissions:
-  contents: write    # needed to push tags and create releases
-  packages: write    # needed if pushing packages/images
-  id-token: write    # optional, for OIDC if you need it
+  contents: write # needed to push tags and create releases
+  packages: write # needed if pushing packages/images
+  id-token: write # optional, for OIDC if you need it
 
 on:
   push:
@@ -35,7 +35,7 @@ jobs:
           PATCH=$(echo $LATEST_TAG | cut -d. -f3)
           COMMIT_TITLE=$(git log -1 --pretty=%s)
           if [[ "$COMMIT_TITLE" =~ [Ff]ix ]]; then PATCH=$((PATCH + 1)); fi
-          if [[ "$COMMIT_TITLE" =~ [Ff]eature ]]; then MINOR=$((MINOR + 1)); fi
+          if [[ "$COMMIT_TITLE" =~ [Ff]eat ]]; then MINOR=$((MINOR + 1)); fi
           if [[ "$COMMIT_TITLE" =~ [Mm]ajor ]]; then MAJOR=$((MAJOR + 1)); fi
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
@@ -96,7 +96,8 @@ jobs:
         if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
         run: |
           NEW_VERSION=${{ steps.version.outputs.new_version }}
-          IMAGE=ghcr.io/${{ github.repository }}:development-v${NEW_VERSION}
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${REPO_LOWER}:development-v${NEW_VERSION}
           git fetch --tags --force origin
           git checkout -f "development-v${NEW_VERSION}"
           docker build -t "${IMAGE}" .
