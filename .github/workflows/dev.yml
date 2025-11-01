@@ -102,3 +102,7 @@ jobs:
           git checkout -f "development-v${NEW_VERSION}"
           docker build -t "${IMAGE}" .
           docker push "${IMAGE}"
+
+          LATEST_IMAGE=ghcr.io/${REPO_LOWER}:development-latest
+          docker tag "${IMAGE}" "${LATEST_IMAGE}"
+          docker push "${LATEST_IMAGE}"
