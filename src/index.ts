@@ -22,9 +22,8 @@ app
 Sentry.setupFastifyErrorHandler(app);
 
 try {
-  app.listen({ port: 3000, host: '0.0.0.0' });
-  console.log('Server Started | Port: 3000');
+  app.listen({ port: 8000, host: '0.0.0.0' });
+  console.log('Server Started | Port: 8000');
 } catch (err) {
   app.log.error(err);
-  process.exit(1);
 }
