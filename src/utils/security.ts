@@ -8,7 +8,6 @@ import {
   type JWTPayload,
 } from 'jose';
 import { createHash } from 'crypto';
-import { promises as fs } from 'fs';
 
 import { Redis } from 'ioredis';
 
@@ -68,6 +67,7 @@ export class Security {
       this.serverToken = await this.createServerToken();
       await this.conn.set('validate-control-flow:serverJwt', this.serverToken);
     }
+    process.stdout.write(`API Token: ${this.serverToken}\n`);
   }
 
   async getPublicJwk(): Promise<JWK> {
@@ -115,17 +115,6 @@ export class Security {
     }
 
     return payload;
-  }
-
-  async refreshServerToken(token: string): Promise<string> {
-    const isValid = await this.verifyServerToken(token);
-    if (!isValid) {
-      throw new Error('Invalid Server Token');
-    }
-
-    this.serverToken = await this.createServerToken();
-    await fs.writeFile('./server.jwt', this.serverToken);
-    return this.serverToken;
   }
 
   async verifyServerToken(token: string): Promise<boolean> {
