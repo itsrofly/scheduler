@@ -29,8 +29,20 @@ const v1Routes: FastifyPluginAsyncZod = async (fastify) => {
     reply.code(500).send();
   });
 
+  fastify.get('/.well-known/jwks.json', async (_, reply) => {
+    try {
+      const jwk = await sec.getPublicJwk();
+      reply.header('Cache-Control', 'public, max-age=300, s-maxage=600');
+      return { keys: [jwk] };
+    } catch (err) {
+      fastify.log.error(err);
+      reply.code(500).send({ error: 'failed to get jwk' });
+    }
+  });
+
   fastify.addHook('preHandler', async (request, reply) => {
-    if (request.url === '/api/v1/health') return;
+    const ignore = ['/api/v1/health', '/api/v1/.well-known/jwks.json'];
+    if (ignore.includes(request.url)) return;
 
     const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
