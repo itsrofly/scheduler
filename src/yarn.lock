@@ -605,6 +605,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@scheduler/api@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@scheduler/api@workspace:."
+  dependencies:
+    "@sentry/cli": "npm:^2.55.0"
+    "@sentry/node": "npm:^10.15.0"
+    "@types/node": "npm:^24.5.2"
+    bullmq: "npm:^5.58.9"
+    dotenv: "npm:^17.2.2"
+    fastify: "npm:^5.6.1"
+    fastify-type-provider-zod: "npm:^6.0.0"
+    ioredis: "npm:^5.8.0"
+    jose: "npm:^6.1.0"
+    prettier: "npm:^3.6.2"
+    ts-node: "npm:^10.9.2"
+    ts-node-dev: "npm:^2.0.0"
+    typescript: "npm:^5.9.2"
+    zod: "npm:^4.1.11"
+  languageName: unknown
+  linkType: soft
+
 "@sentry/cli-darwin@npm:2.55.0":
   version: 2.55.0
   resolution: "@sentry/cli-darwin@npm:2.55.0"
@@ -1183,27 +1204,6 @@ __metadata:
   checksum: 10c0/c996b1cfdf95b6c90fee4dae37e332c8b6eb7d106430c17d538034c0ad9a1630cb194d2ab37293b1bdd4d779494beee7786d586a50bd9376fd6f7bcc2bd4c98f
   languageName: node
   linkType: hard
-
-"control-flow@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "control-flow@workspace:."
-  dependencies:
-    "@sentry/cli": "npm:^2.55.0"
-    "@sentry/node": "npm:^10.15.0"
-    "@types/node": "npm:^24.5.2"
-    bullmq: "npm:^5.58.9"
-    dotenv: "npm:^17.2.2"
-    fastify: "npm:^5.6.1"
-    fastify-type-provider-zod: "npm:^6.0.0"
-    ioredis: "npm:^5.8.0"
-    jose: "npm:^6.1.0"
-    prettier: "npm:^3.6.2"
-    ts-node: "npm:^10.9.2"
-    ts-node-dev: "npm:^2.0.0"
-    typescript: "npm:^5.9.2"
-    zod: "npm:^4.1.11"
-  languageName: unknown
-  linkType: soft
 
 "cookie@npm:^1.0.1":
   version: 1.0.2

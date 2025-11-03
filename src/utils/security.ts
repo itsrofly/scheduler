@@ -16,7 +16,7 @@ export class Security {
   private publicKey: CryptoKey | Uint8Array | undefined;
   private privateKey: CryptoKey | Uint8Array | undefined;
   private alg = 'Ed25519';
-  private kid = 'validate-control-flow';
+  private kid = 'validate-scheduler';
   private serverToken: string | null = null;
 
   constructor(conn: Redis) {
@@ -25,8 +25,8 @@ export class Security {
 
   async start() {
     const [pubJson, privJson] = await Promise.all([
-      this.conn.get('validate-control-flow:publicJwk'),
-      this.conn.get('validate-control-flow:privateJwk'),
+      this.conn.get('validate-scheduler:publicJwk'),
+      this.conn.get('validate-scheduler:privateJwk'),
     ]);
 
     if (pubJson && privJson) {
@@ -48,24 +48,18 @@ export class Security {
       privJwk.kid = this.kid;
 
       await Promise.all([
-        this.conn.set(
-          'validate-control-flow:publicJwk',
-          JSON.stringify(pubJwk),
-        ),
-        this.conn.set(
-          'validate-control-flow:privateJwk',
-          JSON.stringify(privJwk),
-        ),
+        this.conn.set('validate-scheduler:publicJwk', JSON.stringify(pubJwk)),
+        this.conn.set('validate-scheduler:privateJwk', JSON.stringify(privJwk)),
       ]);
     }
 
-    const token = await this.conn.get('validate-control-flow:serverJwt');
+    const token = await this.conn.get('validate-scheduler:serverJwt');
 
     if (token) {
       this.serverToken = token;
     } else {
       this.serverToken = await this.createServerToken();
-      await this.conn.set('validate-control-flow:serverJwt', this.serverToken);
+      await this.conn.set('validate-scheduler:serverJwt', this.serverToken);
     }
     process.stdout.write(`API Token: ${this.serverToken}\n`);
   }
@@ -122,7 +116,7 @@ export class Security {
       if (this.serverToken !== token) return false;
 
       const { payload } = await jwtVerify(token, this.publicKey!, {
-        audience: 'control-flow',
+        audience: 'scheduler',
       });
 
       if (payload.role !== 'server') return false;
@@ -138,7 +132,7 @@ export class Security {
       .setProtectedHeader({ alg: this.alg, kid: this.kid })
       .setIssuedAt()
       .setSubject('sender-auth')
-      .setAudience('control-flow')
+      .setAudience('scheduler')
       .sign(this.privateKey!);
   }
 }

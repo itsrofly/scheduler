@@ -1,12 +1,12 @@
 {
-  "name": "control-flow",
+  "name": "@scheduler/api",
   "types": "index.d.ts",
   "packageManager": "yarn@4.9.2",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "ts-node-dev --respawn --transpile-only index.ts",
     "start": "node dist/index.js",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org hichbox --project control-flow ./dist && sentry-cli sourcemaps upload --org hichbox --project control-flow ./dist"
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org hichbox --project scheduler ./dist && sentry-cli sourcemaps upload --org hichbox --project scheduler ./dist"
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
