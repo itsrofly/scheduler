@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { importJWK, jwtVerify, type JWK, type JWTPayload } from 'jose';
 import { createHash } from 'crypto';
+import 'dotenv/config';
 
 const MessageSchema = z
   .object({
@@ -40,7 +41,13 @@ const MessageSchema = z
     },
   );
 
-type Message = z.infer<typeof MessageSchema>;
+type Message = {
+  /**
+   * An amount of milliseconds to wait until this job can be processed.
+   * Note that for accurate delays, worker and producers should have their clocks synchronized.
+   */
+  delay?: number;
+} & z.infer<typeof MessageSchema>;
 
 export class scheduler {
   private schedulerUrl: string;
@@ -121,7 +128,10 @@ export class scheduler {
       throw new Error('Failed to create message');
     }
 
-    return response;
+    const data = await response.json();
+    const jobId = data.id || data.opts?.jobId;
+
+    return { messageId: jobId as string };
   }
 
   async cancelMessage(id: string) {
@@ -137,7 +147,8 @@ export class scheduler {
     }
 
     if (!response.ok) {
-      throw new Error('Failed to cancel message');
+      const error = await response.text();
+      throw new Error(`Failed to cancel message\n${error}`);
     }
 
     return true;
