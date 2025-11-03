@@ -15,6 +15,6 @@ RUN yarn build
 # Install production dependencies only
 RUN yarn workspaces focus --all --production
 
-EXPOSE 3000
+EXPOSE 8000
 
 CMD ["node", "dist/index.js"]
