@@ -75,7 +75,7 @@ class Control {
       },
     });
 
-    Sentry.logger.info(
+    console.info(
       `Queue | Status: ➕ Created | Queue ID: ${queue.name}`,
       flowControl,
     );
@@ -84,7 +84,7 @@ class Control {
       flowKey,
       async (job: Job) => {
         const message = job.data as Message;
-        Sentry.logger.info(
+        console.info(
           `Message | Status: 🌐 Active | Message ID: ${job.id}`,
           message,
         );
@@ -135,11 +135,11 @@ class Control {
                     delete this.workers[flowKey];
                   }
 
-                  Sentry.logger.info(
+                  console.info(
                     `Queue | Status: 🚪 Closed | Worker ID: ${queue.name}`,
                     flowControl,
                   );
-                  Sentry.logger.info(
+                  console.info(
                     `Worker | Status: 🚪 Closed | Worker ID: ${worker.name}`,
                     flowControl,
                   );
@@ -151,7 +151,7 @@ class Control {
             );
           }
 
-          Sentry.logger.info(
+          console.info(
             `Message | Status: ✅ Delivered | Message ID: ${job.id}`,
             message,
           );
@@ -160,12 +160,12 @@ class Control {
             err instanceof Error &&
             err.message.startsWith('Error: Failed Request')
           ) {
-            Sentry.logger.warn(
+            console.warn(
               `Message | Status: 🔴 Failed | Message ID: ${job.id} | ${err.message}`,
               message,
             );
           } else {
-            Sentry.logger.error(
+            console.error(
               `Message | Status: 📛 Failed | Message ID: ${job.id}`,
               message,
             );
@@ -184,7 +184,7 @@ class Control {
     );
 
     this.workers[flowKey] = { worker, queue };
-    Sentry.logger.info(
+    console.info(
       `Worker | Status: ➕ Created | Worker ID: ${worker.name}`,
       flowControl,
     );
@@ -206,7 +206,7 @@ class Control {
       backoff: { type: 'exponential', delay: message.retryDelay || 3000 },
     });
 
-    Sentry.logger.info(
+    console.info(
       `Message | Status: 📨 Created | Message ID: ${job.id}`,
       message,
     );
@@ -217,9 +217,7 @@ class Control {
     const keys = await this.conn.keys(`bull:*:${jobId}`);
 
     if (keys.length === 0) {
-      Sentry.logger.warn(
-        ` Message | Status : 🔴 Not found | Message ID: ${jobId}`,
-      );
+      console.warn(` Message | Status : 🔴 Not found | Message ID: ${jobId}`);
       return;
     }
 
@@ -229,9 +227,7 @@ class Control {
       const job = await queue.getJob(jobId);
       if (job) {
         await job.remove();
-        Sentry.logger.info(
-          `Message | Status: 📵 Cancelled | Message ID: ${jobId}`,
-        );
+        console.info(`Message | Status: 📵 Cancelled | Message ID: ${jobId}`);
         return jobId;
       }
     }
