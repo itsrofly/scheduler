@@ -73,7 +73,7 @@ export class scheduler {
     }
 
     const jwk: JWK = keys[0];
-    const pubKey = await importJWK(jwk, jwk.alg);
+    const pubKey = await importJWK(jwk, jwk.crv);
 
     if (!pubKey) {
       throw new Error('No public key imported from keys');
