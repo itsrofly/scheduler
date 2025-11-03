@@ -35,6 +35,7 @@ jobs:
           PATCH=$(echo $LATEST_TAG | cut -d. -f3)
           COMMIT_TITLE=$(git log -1 --pretty=%s)
           if [[ "$COMMIT_TITLE" =~ [Ff]ix ]]; then PATCH=$((PATCH + 1)); fi
+          if [[ "$COMMIT_TITLE" =~ [Cc]hore ]]; then PATCH=$((PATCH + 1)); fi
           if [[ "$COMMIT_TITLE" =~ [Ff]eat ]]; then MINOR=$((MINOR + 1)); fi
           if [[ "$COMMIT_TITLE" =~ [Mm]ajor ]]; then MAJOR=$((MAJOR + 1)); fi
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
