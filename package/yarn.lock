@@ -95,6 +95,7 @@ __metadata:
   resolution: "@scheduler/inference@workspace:."
   dependencies:
     "@types/node": "npm:^24.10.0"
+    dotenv: "npm:^17.2.3"
     jose: "npm:^6.1.0"
     prettier: "npm:^3.6.2"
     ts-node: "npm:^10.9.2"
@@ -386,6 +387,13 @@ __metadata:
   version: 4.0.2
   resolution: "diff@npm:4.0.2"
   checksum: 10c0/81b91f9d39c4eaca068eb0c1eb0e4afbdc5bb2941d197f513dd596b820b956fef43485876226d65d497bebc15666aa2aa82c679e84f65d5f2bfbf14ee46e32c1
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:^17.2.3":
+  version: 17.2.3
+  resolution: "dotenv@npm:17.2.3"
+  checksum: 10c0/c884403209f713214a1b64d4d1defa4934c2aa5b0002f5a670ae298a51e3c3ad3ba79dfee2f8df49f01ae74290fcd9acdb1ab1d09c7bfb42b539036108bb2ba0
   languageName: node
   linkType: hard
 
