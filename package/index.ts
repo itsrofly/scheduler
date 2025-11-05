@@ -49,7 +49,7 @@ type Message = {
   delay?: number;
 } & z.infer<typeof MessageSchema>;
 
-export class scheduler {
+export class Scheduler {
   private schedulerUrl: string;
   private schedulerToken: string;
   private pubkey: CryptoKey | Uint8Array<ArrayBufferLike> | undefined;
