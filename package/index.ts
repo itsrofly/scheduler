@@ -52,7 +52,6 @@ type Message = {
 export class Scheduler {
   private schedulerUrl: string;
   private schedulerToken: string;
-  private pubkey: CryptoKey | Uint8Array<ArrayBufferLike> | undefined;
 
   constructor(
     schedulerUrl = process.env.SCHEDULER_URL,
@@ -66,7 +65,7 @@ export class Scheduler {
     this.schedulerToken = schedulerToken;
   }
 
-  async initialize() {
+  async getPubKey() {
     const response = await fetch(
       `${this.schedulerUrl}/api/v1/.well-known/jwks.json`,
     );
@@ -85,7 +84,7 @@ export class Scheduler {
     if (!pubKey) {
       throw new Error('No public key imported from keys');
     }
-    this.pubkey = pubKey;
+    return pubKey
   }
 
   async verifyMessage(
@@ -93,11 +92,13 @@ export class Scheduler {
     body: unknown,
     expectedAudience: string,
   ): Promise<JWTPayload> {
-    if (!this.pubkey) {
-      throw new Error('Public key not initialized. Call initialize() first.');
+    const pubkey = await this.getPubKey()
+
+    if (pubkey) {
+      throw new Error('Public key not found.');
     }
 
-    const { payload } = await jwtVerify(token, this.pubkey!, {
+    const { payload } = await jwtVerify(token, pubkey, {
       audience: expectedAudience,
     });
 
