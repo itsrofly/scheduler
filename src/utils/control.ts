@@ -203,7 +203,10 @@ class Control {
       jobId: uuidv4(),
       delay: message.delay || 0,
       attempts: message.retry || 3,
-      backoff: { type: 'exponential', delay: message.retryDelay || 3000 },
+      backoff: {
+        type: 'exponential',
+        delay: message.retryDelay || 5 * 60 * 1000,
+      },
     });
 
     console.info(
