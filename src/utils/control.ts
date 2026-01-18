@@ -19,12 +19,12 @@ const MessageSchema = z
     flowControl: z
       .object({
         key: z.string(),
-        rate: z.number(),
-        period: z.number(),
+        rate: z.number(), // Max number of jobs
+        period: z.number(), // In milliseconds
         concurrency: z.number().optional(),
       })
       .optional(),
-    delay: z.number().optional(),
+    delay: z.number().optional(), // In milliseconds
   })
   .refine(
     (val) => {
@@ -51,6 +51,9 @@ class Control {
     {};
   conn: Redis;
   sec: Security;
+  defaultDelay = 5 * 60 * 1000; // 5 minutes
+  removeOnCompleteAge = 24 * 60 * 60 * 1000; // 24 hours
+  removeOnFailAge = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   constructor(sec: Security, connection: Redis) {
     this.conn = connection;
@@ -70,8 +73,8 @@ class Control {
     const queue = new Queue(flowKey, {
       connection: this.conn,
       defaultJobOptions: {
-        removeOnComplete: { age: 24 * 60 * 60 * 1000 },
-        removeOnFail: { age: 7 * 24 * 60 * 60 * 1000 },
+        removeOnComplete: { age: this.removeOnCompleteAge },
+        removeOnFail: { age: this.removeOnFailAge },
       },
     });
 
@@ -90,20 +93,26 @@ class Control {
         );
 
         try {
+          const createdAt = job.timestamp;
+          const startedAt = Date.now();
+
           const jwt = await this.sec.signJWT(message.url, message.body);
+          const header = {
+            'Message-Id': job.id!,
+            'Attempts-Made': String(job.attemptsMade),
+            'Retry-Delay': String(message.retryDelay || this.defaultDelay), // In milliseconds
+            'Rate-Delay': flowControl ? String(startedAt - createdAt) : '', // In milliseconds
+            Authorization: `Bearer ${jwt}`,
+          };
 
           const response = await fetch(message.url, {
             method: message.method,
             headers: message.body
               ? {
+                  ...header,
                   'Content-Type': 'application/json',
-                  'Message-Id': job.id!,
-                  Authorization: `Bearer ${jwt}`,
                 }
-              : {
-                  'Message-Id': job.id!,
-                  Authorization: `Bearer ${jwt}`,
-                },
+              : header,
             body: JSON.stringify(message.body),
           });
 
@@ -205,7 +214,7 @@ class Control {
       attempts: message.retry || 3,
       backoff: {
         type: 'exponential',
-        delay: message.retryDelay || 5 * 60 * 1000,
+        delay: message.retryDelay || this.defaultDelay, // In milliseconds,
       },
     });
 
