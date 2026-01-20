@@ -110,6 +110,13 @@ export class Security {
   ): Promise<string> {
     const digest = createHash('sha256').update(body).digest('base64url');
 
+    console.log(
+      `Created SignJWT with digest: ${digest} |
+        claims: ${JSON.stringify(extraClaims)} |
+        audience: ${audience} | 
+        body: ${body} | 
+        ttl: ${ttl}`,
+    );
     return await new SignJWT({
       ...extraClaims,
       digest,
@@ -131,12 +138,15 @@ export class Security {
       audience: expectedAudience,
     });
 
-    const digest = createHash('sha256')
-      .update(body)
-      .digest('base64url');
+    const digest = createHash('sha256').update(body).digest('base64url');
 
     if (payload.digest !== digest) {
-      throw new Error('body digest mismatch');
+      throw new Error(
+        `Digest mismatch, expected: ${payload.digest}, got: ${digest} | 
+          body: ${body} | 
+          payload: ${JSON.stringify(payload)} |
+          audience: ${expectedAudience}`,
+      );
     }
 
     return payload;
