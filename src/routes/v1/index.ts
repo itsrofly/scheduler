@@ -32,7 +32,13 @@ const v1Routes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.get('/.well-known/jwks.json', async (_, reply) => {
     try {
       const jwk = await sec.getPublicJwk();
-      reply.header('Cache-Control', 'public, max-age=300, s-maxage=600');
+      reply
+        .header(
+          'Cache-Control',
+          'no-store, no-cache, must-revalidate, proxy-revalidate',
+        )
+        .header('Pragma', 'no-cache')
+        .header('Expires', '0');
       return { keys: [jwk] };
     } catch (err) {
       fastify.log.error(err);
