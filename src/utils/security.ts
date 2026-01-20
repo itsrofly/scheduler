@@ -4,6 +4,7 @@ import {
   importJWK,
   SignJWT,
   jwtVerify,
+  decodeJwt,
   type JWK,
   type JWTPayload,
 } from 'jose';
@@ -18,6 +19,7 @@ export class Security {
   private alg = 'Ed25519';
   private kid = 'validate-scheduler';
   private serverToken: string | null = null;
+  private serverTokenExpiry = '1y';
 
   constructor(conn: Redis) {
     this.conn = conn;
@@ -29,12 +31,44 @@ export class Security {
       this.conn.get('validate-scheduler:privateJwk'),
     ]);
 
+    let expiresAt: Date | null = null;
     if (pubJson && privJson) {
       const pubJwk: JWK = JSON.parse(pubJson);
       const privJwk: JWK = JSON.parse(privJson);
 
       this.publicKey = await importJWK(pubJwk, this.alg);
       this.privateKey = await importJWK(privJwk, this.alg);
+      this.serverToken = await this.conn.get('validate-scheduler:serverToken');
+
+      let isValid = this.serverToken
+        ? await this.verifyServerToken(this.serverToken)
+        : false;
+
+      if (isValid && this.serverToken) {
+        const payload = decodeJwt(this.serverToken);
+        if (payload.exp) {
+          expiresAt = new Date(payload.exp * 1000);
+        }
+
+        const thirtyOneDaysMs = 31 * 24 * 60 * 60 * 1000;
+        if (!expiresAt || expiresAt.getTime() - Date.now() < thirtyOneDaysMs) {
+          process.stdout.write(
+            'Server token expiring soon (<= 31 days). Setting as expired...\n',
+          );
+          isValid = false;
+        }
+      }
+
+      if (!isValid) {
+        process.stdout.write(
+          `Expired or invalid server token, generating a new one...\n`,
+        );
+        this.serverToken = await this.createServerToken();
+        await this.conn.set('validate-scheduler:serverToken', this.serverToken);
+
+        const payload = decodeJwt(this.serverToken);
+        expiresAt = new Date((payload.exp || 0) * 1000);
+      }
     } else {
       const { publicKey, privateKey } = await generateKeyPair(this.alg, {
         extractable: true,
@@ -51,17 +85,15 @@ export class Security {
         this.conn.set('validate-scheduler:publicJwk', JSON.stringify(pubJwk)),
         this.conn.set('validate-scheduler:privateJwk', JSON.stringify(privJwk)),
       ]);
-    }
-
-    const token = await this.conn.get('validate-scheduler:serverJwt');
-
-    if (token) {
-      this.serverToken = token;
-    } else {
       this.serverToken = await this.createServerToken();
-      await this.conn.set('validate-scheduler:serverJwt', this.serverToken);
+      await this.conn.set('validate-scheduler:serverToken', this.serverToken);
+
+      const payload = decodeJwt(this.serverToken);
+      expiresAt = new Date((payload.exp || 0) * 1000);
     }
-    process.stdout.write(`API Token: ${this.serverToken}\n`);
+
+    process.stdout.write(`Server Token: ${this.serverToken}\n`);
+    process.stdout.write(`Expires in: ${expiresAt?.toLocaleDateString()}\n`);
   }
 
   async getPublicJwk(): Promise<JWK> {
@@ -122,15 +154,16 @@ export class Security {
       if (payload.role !== 'server') return false;
 
       return true;
-    } catch {
+    } catch (error) {
       return false;
     }
   }
 
-  private async createServerToken(): Promise<string> {
+  private async createServerToken() {
     return await new SignJWT({ role: 'server' })
       .setProtectedHeader({ alg: this.alg, kid: this.kid })
       .setIssuedAt()
+      .setExpirationTime(this.serverTokenExpiry)
       .setSubject('sender-auth')
       .setAudience('scheduler')
       .sign(this.privateKey!);
