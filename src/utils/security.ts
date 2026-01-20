@@ -124,7 +124,7 @@ export class Security {
 
   async verifyJWT(
     token: string,
-    body: unknown,
+    body: string,
     expectedAudience: string,
   ): Promise<JWTPayload> {
     const { payload } = await jwtVerify(token, this.publicKey!, {
@@ -132,7 +132,7 @@ export class Security {
     });
 
     const digest = createHash('sha256')
-      .update(JSON.stringify(body ?? ''))
+      .update(body)
       .digest('base64url');
 
     if (payload.digest !== digest) {
