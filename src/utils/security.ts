@@ -104,12 +104,11 @@ export class Security {
 
   async signJWT(
     audience: string,
-    body: unknown,
+    body: string,
     extraClaims: Record<string, unknown> = {},
     ttl = '120s',
   ): Promise<string> {
-    const bodyStr = JSON.stringify(body ?? '');
-    const digest = createHash('sha256').update(bodyStr).digest('base64url');
+    const digest = createHash('sha256').update(body).digest('base64url');
 
     return await new SignJWT({
       ...extraClaims,

@@ -96,24 +96,21 @@ class Control {
           const createdAt = job.timestamp;
           const startedAt = Date.now();
 
-          const jwt = await this.sec.signJWT(message.url, message.body);
-          const header = {
+          const body = JSON.stringify(message.body ?? '');
+          const jwt = await this.sec.signJWT(message.url, body);
+          const headers = {
             'Message-Id': job.id!,
             'Attempts-Made': String(job.attemptsMade),
             'Retry-Delay': String(message.retryDelay || this.defaultDelay), // In milliseconds
             'Rate-Delay': flowControl ? String(startedAt - createdAt) : '', // In milliseconds
             Authorization: `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
           };
 
           const response = await fetch(message.url, {
             method: message.method,
-            headers: message.body
-              ? {
-                  ...header,
-                  'Content-Type': 'application/json',
-                }
-              : header,
-            body: JSON.stringify(message.body),
+            headers,
+            body,
           });
 
           if (!response.ok) {
