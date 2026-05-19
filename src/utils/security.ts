@@ -4,11 +4,10 @@ import {
   importJWK,
   SignJWT,
   jwtVerify,
-  decodeJwt,
   type JWK,
   type JWTPayload,
 } from 'jose';
-import { createHash } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 
 import { Redis } from 'ioredis';
 
@@ -18,11 +17,17 @@ export class Security {
   private privateKey: CryptoKey | Uint8Array | undefined;
   private alg = 'Ed25519';
   private kid = 'validate-scheduler';
-  private serverToken: string | null = null;
-  private serverTokenExpiry = '1y';
+  private serverToken: string;
 
   constructor(conn: Redis) {
     this.conn = conn;
+
+    const apiTokenKey = process.env.API_TOKEN_KEY;
+    if (!apiTokenKey) {
+      throw new Error('API_TOKEN_KEY is not defined');
+    }
+
+    this.serverToken = apiTokenKey;
   }
 
   async start() {
@@ -31,44 +36,12 @@ export class Security {
       this.conn.get('validate-scheduler:privateJwk'),
     ]);
 
-    let expiresAt: Date | null = null;
     if (pubJson && privJson) {
       const pubJwk: JWK = JSON.parse(pubJson);
       const privJwk: JWK = JSON.parse(privJson);
 
       this.publicKey = await importJWK(pubJwk, this.alg);
       this.privateKey = await importJWK(privJwk, this.alg);
-      this.serverToken = await this.conn.get('validate-scheduler:serverToken');
-
-      let isValid = this.serverToken
-        ? await this.verifyServerToken(this.serverToken)
-        : false;
-
-      if (isValid && this.serverToken) {
-        const payload = decodeJwt(this.serverToken);
-        if (payload.exp) {
-          expiresAt = new Date(payload.exp * 1000);
-        }
-
-        const thirtyOneDaysMs = 31 * 24 * 60 * 60 * 1000;
-        if (!expiresAt || expiresAt.getTime() - Date.now() < thirtyOneDaysMs) {
-          process.stdout.write(
-            'Server token expiring soon (<= 31 days). Setting as expired...\n',
-          );
-          isValid = false;
-        }
-      }
-
-      if (!isValid) {
-        process.stdout.write(
-          `Expired or invalid server token, generating a new one...\n`,
-        );
-        this.serverToken = await this.createServerToken();
-        await this.conn.set('validate-scheduler:serverToken', this.serverToken);
-
-        const payload = decodeJwt(this.serverToken);
-        expiresAt = new Date((payload.exp || 0) * 1000);
-      }
     } else {
       const { publicKey, privateKey } = await generateKeyPair(this.alg, {
         extractable: true,
@@ -85,15 +58,7 @@ export class Security {
         this.conn.set('validate-scheduler:publicJwk', JSON.stringify(pubJwk)),
         this.conn.set('validate-scheduler:privateJwk', JSON.stringify(privJwk)),
       ]);
-      this.serverToken = await this.createServerToken();
-      await this.conn.set('validate-scheduler:serverToken', this.serverToken);
-
-      const payload = decodeJwt(this.serverToken);
-      expiresAt = new Date((payload.exp || 0) * 1000);
     }
-
-    process.stdout.write(`Server Token: ${this.serverToken}\n`);
-    process.stdout.write(`Expires in: ${expiresAt?.toLocaleDateString()}\n`);
   }
 
   async getPublicJwk(): Promise<JWK> {
@@ -113,8 +78,8 @@ export class Security {
     console.log(
       `Created SignJWT with digest: ${digest} |
         claims: ${JSON.stringify(extraClaims)} |
-        audience: ${audience} | 
-        body: ${body} | 
+        audience: ${audience} |
+        body: ${body} |
         ttl: ${ttl}`,
     );
     return await new SignJWT({
@@ -142,8 +107,8 @@ export class Security {
 
     if (payload.digest !== digest) {
       throw new Error(
-        `Digest mismatch, expected: ${payload.digest}, got: ${digest} | 
-          body: ${body} | 
+        `Digest mismatch, expected: ${payload.digest}, got: ${digest} |
+          body: ${body} |
           payload: ${JSON.stringify(payload)} |
           audience: ${expectedAudience}`,
       );
@@ -153,28 +118,11 @@ export class Security {
   }
 
   async verifyServerToken(token: string): Promise<boolean> {
-    try {
-      if (this.serverToken !== token) return false;
+    const expected = Buffer.from(this.serverToken, 'utf8');
+    const received = Buffer.from(token, 'utf8');
 
-      const { payload } = await jwtVerify(token, this.publicKey!, {
-        audience: 'scheduler',
-      });
+    if (expected.length !== received.length) return false;
 
-      if (payload.role !== 'server') return false;
-
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  private async createServerToken() {
-    return await new SignJWT({ role: 'server' })
-      .setProtectedHeader({ alg: this.alg, kid: this.kid })
-      .setIssuedAt()
-      .setExpirationTime(this.serverTokenExpiry)
-      .setSubject('sender-auth')
-      .setAudience('scheduler')
-      .sign(this.privateKey!);
+    return timingSafeEqual(expected, received);
   }
 }
