@@ -10,6 +10,7 @@ COPY src/ ./
 
 RUN npm install -g corepack
 RUN yarn install --immutable
+RUN yarn global add curl
 RUN yarn build
 
 # Install production dependencies only
