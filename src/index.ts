@@ -4,6 +4,7 @@ import './instrument';
 import Fastify from 'fastify';
 import * as Sentry from '@sentry/node';
 import v1Routes from './routes/v1';
+import logger from './utils/logger';
 
 import {
   serializerCompiler,
@@ -11,7 +12,9 @@ import {
   ZodTypeProvider,
 } from 'fastify-type-provider-zod';
 
-const app = Fastify();
+const app = Fastify({
+  loggerInstance: logger('scheduler'),
+});
 
 app
   .setSerializerCompiler(serializerCompiler)

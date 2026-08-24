@@ -7,8 +7,10 @@ import { Control } from '../../utils/control';
 const REDIS_URL = process.env.REDIS_URL;
 if (!REDIS_URL) throw new Error('REDIS_URL is not defined');
 
+const keyPrefix = 'scheduler:';
 const conn = new Redis(REDIS_URL, {
   maxRetriesPerRequest: null,
+  keyPrefix,
 });
 
 declare module 'fastify' {
@@ -20,7 +22,7 @@ declare module 'fastify' {
 const v1Routes: FastifyPluginAsyncZod = async (fastify) => {
   const sec = new Security(conn);
   await sec.start();
-  const control = new Control(sec, conn);
+  const control = new Control(sec, conn, fastify.log);
 
   fastify.get('/health', async function handler(_, reply) {
     if (conn.status === 'ready') {

@@ -1,5 +1,6 @@
 import { Redis } from 'ioredis';
 import { Queue, Worker, Job } from 'bullmq';
+import { FastifyBaseLogger } from 'fastify';
 import * as Sentry from '@sentry/node';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
@@ -54,10 +55,12 @@ class Control {
   defaultDelay = 5 * 60 * 1000; // 5 minutes
   removeOnCompleteAge = 24 * 60 * 60 * 1000; // 24 hours
   removeOnFailAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+  logger: FastifyBaseLogger;
 
-  constructor(sec: Security, connection: Redis) {
+  constructor(sec: Security, connection: Redis, log: FastifyBaseLogger) {
     this.conn = connection;
     this.sec = sec;
+    this.logger = log;
   }
 
   private flowControlKey(flowControl?: Message['flowControl']) {
@@ -78,18 +81,16 @@ class Control {
       },
     });
 
-    console.info(
-      `Queue | Status: ➕ Created | Queue ID: ${queue.name}`,
-      flowControl,
+    this.logger.info(
+      `Queue | Status: ➕ Created | Queue ID: ${queue.name} | Control: ${JSON.stringify(flowControl)}`,
     );
 
     const worker = new Worker(
       flowKey,
       async (job: Job) => {
         const message = job.data as Message;
-        console.info(
-          `Message | Status: 🌐 Active | Message ID: ${job.id}`,
-          message,
+        this.logger.info(
+          `Message | Message ID: ${job.id} | Status: 🌐 Active | Data: ${JSON.stringify(message)}`,
         );
 
         try {
@@ -141,13 +142,11 @@ class Control {
                     delete this.workers[flowKey];
                   }
 
-                  console.info(
-                    `Queue | Status: 🚪 Closed | Worker ID: ${queue.name}`,
-                    flowControl,
+                  this.logger.info(
+                    `Queue | Status: 🚪 Closed | Worker ID: ${queue.name} | Control: ${JSON.stringify(flowControl)}`,
                   );
-                  console.info(
-                    `Worker | Status: 🚪 Closed | Worker ID: ${worker.name}`,
-                    flowControl,
+                  this.logger.info(
+                    `Worker | Status: 🚪 Closed | Worker ID: ${worker.name} | Control: ${JSON.stringify(flowControl)}`,
                   );
                 } else {
                   this.workers[flowKey].closing = false;
@@ -157,23 +156,20 @@ class Control {
             );
           }
 
-          console.info(
-            `Message | Status: ✅ Delivered | Message ID: ${job.id}`,
-            message,
+          this.logger.info(
+            `Message | Message ID: ${job.id} | Status: ✅ Delivered | Data: ${message}`,
           );
         } catch (err) {
           if (
             err instanceof Error &&
             err.message.startsWith('Error: Failed Request')
           ) {
-            console.warn(
-              `Message | Status: 🔴 Failed | Message ID: ${job.id} | ${err.message}`,
-              message,
+            this.logger.warn(
+              `Message | Status: 🔴 Failed | Message ID: ${job.id} | Error: ${err.message} | Data: ${message}`,
             );
           } else {
-            console.error(
-              `Message | Status: 📛 Failed | Message ID: ${job.id}`,
-              message,
+            this.logger.error(
+              `Message | Status: 📛 Failed | Message ID: ${job.id} | Data: ${message}`,
             );
             Sentry.captureException(err);
           }
@@ -190,9 +186,8 @@ class Control {
     );
 
     this.workers[flowKey] = { worker, queue };
-    console.info(
-      `Worker | Status: ➕ Created | Worker ID: ${worker.name}`,
-      flowControl,
+    this.logger.info(
+      `Worker | Status: ➕ Created | Worker ID: ${worker.name} | Control: ${flowControl}`,
     );
     return this.workers[flowKey];
   }
@@ -215,9 +210,8 @@ class Control {
       },
     });
 
-    console.info(
-      `Message | Status: 📨 Created | Message ID: ${job.id}`,
-      message,
+    this.logger.info(
+      `Message | Status: 📨 Created | Message ID: ${job.id} | Data: ${message}`,
     );
     return job;
   }
@@ -226,7 +220,9 @@ class Control {
     const keys = await this.conn.keys(`bull:*:${jobId}`);
 
     if (keys.length === 0) {
-      console.warn(` Message | Status : 🔴 Not found | Message ID: ${jobId}`);
+      this.logger.warn(
+        ` Message | Status : 🔴 Not found | Message ID: ${jobId}`,
+      );
       return;
     }
 
@@ -236,7 +232,9 @@ class Control {
       const job = await queue.getJob(jobId);
       if (job) {
         await job.remove();
-        console.info(`Message | Status: 📵 Cancelled | Message ID: ${jobId}`);
+        this.logger.info(
+          `Message | Status: 📵 Cancelled | Message ID: ${jobId}`,
+        );
         return jobId;
       }
     }
