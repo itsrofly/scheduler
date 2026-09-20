@@ -1,13 +1,16 @@
-# put this at top of the workflow file (above on:, jobs:)
+
 permissions:
   contents: write # needed to push tags and create releases
   packages: write # needed if pushing packages/images
   id-token: write # optional, for OIDC if you need it
 
+env:
+  VARIANT_NAME: pre-release
+
 on:
   push:
     branches:
-      - release/dev
+      - release/pre-release
 
 jobs:
   release:
@@ -20,12 +23,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
+          submodules: recursive
 
       - name: Determine next version
         id: version
         run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "development-v0.0.0")
+          LATEST_TAG=$(git describe --tags --match "$VARIANT_NAME-v*" --abbrev=0 2>/dev/null || echo "$VARIANT_NAME-v0.0.0")
           LATEST_TAG=$(echo "$LATEST_TAG" | sed 's/.*-v//; s/^v//')
           if [[ ! "$LATEST_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             LATEST_TAG="0.0.0"
@@ -46,10 +51,10 @@ jobs:
       - name: Create tag and release via API when version changed
         if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
-          TAG: development-v${{ steps.version.outputs.new_version }}
+          TAG: ${{ env.VARIANT_NAME }}-v${{ steps.version.outputs.new_version }}
           BODY: ${{ env.commit_title }}
         run: |
           set -e
@@ -98,12 +103,12 @@ jobs:
         run: |
           NEW_VERSION=${{ steps.version.outputs.new_version }}
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE=ghcr.io/${REPO_LOWER}:development-v${NEW_VERSION}
+          IMAGE=ghcr.io/${REPO_LOWER}:$VARIANT_NAME-v${NEW_VERSION}
           git fetch --tags --force origin
-          git checkout -f "development-v${NEW_VERSION}"
+          git checkout -f "$VARIANT_NAME-v${NEW_VERSION}"
           docker build -t "${IMAGE}" .
           docker push "${IMAGE}"
 
-          LATEST_IMAGE=ghcr.io/${REPO_LOWER}:development-latest
+          LATEST_IMAGE=ghcr.io/${REPO_LOWER}:$VARIANT_NAME-latest
           docker tag "${IMAGE}" "${LATEST_IMAGE}"
           docker push "${LATEST_IMAGE}"

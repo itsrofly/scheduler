@@ -1,7 +1,6 @@
 import { Redis } from 'ioredis';
 import { Queue, Worker, Job } from 'bullmq';
 import { FastifyBaseLogger } from 'fastify';
-import * as Sentry from '@sentry/node';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -171,7 +170,6 @@ class Control {
             this.logger.error(
               `Message | Status: 📛 Failed | Message ID: ${job.id} | Data: ${message}`,
             );
-            Sentry.captureException(err);
           }
           throw err;
         }
