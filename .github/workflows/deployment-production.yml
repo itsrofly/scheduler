@@ -1,0 +1,208 @@
+permissions:
+  contents: write # needed to push tags and create releases
+  packages: write # needed if pushing packages/images
+  id-token: write # optional, for OIDC if you need it
+
+env:
+  VARIANT_NAME: ""
+
+on:
+  push:
+    branches:
+      - release/production
+
+jobs:
+  release:
+    name: Create tag + Release + push image
+    runs-on: ubuntu-latest
+
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+      latest_tag: ${{ steps.version.outputs.latest_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Determine next version
+        id: version
+        shell: bash
+        run: |
+          set -e
+
+          # VARIANT_NAME=""       -> VERSION_PREFIX=""
+          # VARIANT_NAME=backend  -> VERSION_PREFIX="backend-"
+          VERSION_PREFIX="${VARIANT_NAME:+${VARIANT_NAME}-}"
+
+          TAG_PATTERN="${VERSION_PREFIX}v*"
+          DEFAULT_TAG="${VERSION_PREFIX}v0.0.0"
+
+          echo "Variant: '${VARIANT_NAME}'"
+          echo "Tag pattern: ${TAG_PATTERN}"
+
+          LATEST_FULL_TAG=$(
+            git describe \
+              --tags \
+              --match "${TAG_PATTERN}" \
+              --abbrev=0 \
+              2>/dev/null || echo "${DEFAULT_TAG}"
+          )
+
+          # Examples:
+          # v1.2.3         -> 1.2.3
+          # backend-v1.2.3 -> 1.2.3
+          LATEST_TAG="${LATEST_FULL_TAG#${VERSION_PREFIX}v}"
+
+          if [[ ! "$LATEST_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            LATEST_TAG="0.0.0"
+          fi
+
+          MAJOR=$(echo "$LATEST_TAG" | cut -d. -f1)
+          MINOR=$(echo "$LATEST_TAG" | cut -d. -f2)
+          PATCH=$(echo "$LATEST_TAG" | cut -d. -f3)
+
+          COMMIT_TITLE=$(git log -1 --pretty=%s)
+
+          if [[ "$COMMIT_TITLE" =~ [Ff]ix ]]; then
+            PATCH=$((PATCH + 1))
+          fi
+
+          if [[ "$COMMIT_TITLE" =~ [Cc]hore ]]; then
+            PATCH=$((PATCH + 1))
+          fi
+
+          if [[ "$COMMIT_TITLE" =~ [Ff]eat ]]; then
+            MINOR=$((MINOR + 1))
+          fi
+
+          if [[ "$COMMIT_TITLE" =~ [Mm]ajor ]]; then
+            MAJOR=$((MAJOR + 1))
+          fi
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          echo "Latest version: $LATEST_TAG"
+          echo "New version:    $NEW_VERSION"
+
+          echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+          echo "commit_title=$COMMIT_TITLE" >> "$GITHUB_ENV"
+
+      - name: Create tag and release via API when version changed
+        if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+          BODY: ${{ env.commit_title }}
+        shell: bash
+        run: |
+          set -e
+
+          VERSION_PREFIX="${VARIANT_NAME:+${VARIANT_NAME}-}"
+          TAG="${VERSION_PREFIX}v${NEW_VERSION}"
+
+          echo "Creating tag: $TAG"
+
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+
+          # Make origin use the PAT so the workflow can push the tag.
+          git remote set-url \
+            origin \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git"
+
+          # Create annotated tag if missing.
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git tag -a "$TAG" -m "$BODY"
+          fi
+
+          # Push the tag.
+          git push origin "$TAG"
+
+          # Create GitHub Release via REST API.
+          PAYLOAD=$(
+            jq -n \
+              --arg t "$TAG" \
+              --arg s "$SHA" \
+              --arg n "$TAG" \
+              --arg b "$BODY" \
+              '{
+                tag_name: $t,
+                target_commitish: $s,
+                name: $n,
+                body: $b,
+                draft: false,
+                prerelease: false
+              }'
+          )
+
+          HTTP=$(
+            curl \
+              -s \
+              -o /tmp/resp \
+              -w "%{http_code}" \
+              -X POST \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${REPO}/releases" \
+              -d "$PAYLOAD"
+          )
+
+          if [ "$HTTP" -ge 200 ] && [ "$HTTP" -lt 300 ]; then
+            echo "Release created: $TAG"
+          else
+            echo "Release API returned HTTP $HTTP"
+            cat /tmp/resp
+            exit 1
+          fi
+
+      - name: Log in to GHCR
+        if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image to GHCR
+        if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+        shell: bash
+        run: |
+          set -e
+
+          VERSION_PREFIX="${VARIANT_NAME:+${VARIANT_NAME}-}"
+
+          TAG="${VERSION_PREFIX}v${NEW_VERSION}"
+
+          REPO_LOWER=$(
+            echo "${{ github.repository }}" |
+            tr '[:upper:]' '[:lower:]'
+          )
+
+          IMAGE="ghcr.io/${REPO_LOWER}:${TAG}"
+          LATEST_IMAGE="ghcr.io/${REPO_LOWER}:${VERSION_PREFIX}latest"
+
+          echo "Release tag:  $TAG"
+          echo "Docker image: $IMAGE"
+          echo "Latest image: $LATEST_IMAGE"
+
+          git fetch --tags --force origin
+          git checkout -f "$TAG"
+
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+          docker tag "$IMAGE" "$LATEST_IMAGE"
+          docker push "$LATEST_IMAGE"
