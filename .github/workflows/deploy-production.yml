@@ -4,7 +4,7 @@ permissions:
   id-token: write # optional, for OIDC if you need it
 
 env:
-  VARIANT_NAME: ""
+  VARIANT_NAME: ''
 
 on:
   push:
@@ -90,8 +90,7 @@ jobs:
 
           echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-
-          echo "commit_title=$COMMIT_TITLE" >> "$GITHUB_ENV"
+          echo "commit_title=$COMMIT_TITLE" >> "$GITHUB_OUTPUT"
 
       - name: Create tag and release via API when version changed
         if: steps.version.outputs.new_version != steps.version.outputs.latest_tag
@@ -100,7 +99,7 @@ jobs:
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
           NEW_VERSION: ${{ steps.version.outputs.new_version }}
-          BODY: ${{ env.commit_title }}
+          BODY: ${{ steps.version.outputs.commit_title }}
         shell: bash
         run: |
           set -e
