@@ -9,7 +9,6 @@ RUN corepack enable
 
 # Copy dependency files first for Docker cache
 COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn/ .yarn/
 
 RUN yarn install --immutable
 
@@ -29,7 +28,6 @@ WORKDIR /usr/src/app
 RUN corepack enable
 
 COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn/ .yarn/
 
 RUN yarn workspaces focus --all --production
 
