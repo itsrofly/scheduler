@@ -7,7 +7,7 @@ echo "Generating API token..."
 export API_TOKEN_KEY="$(openssl rand -hex 32)"
 
 echo " Starting Docker Compose..."
-docker compose up -d
+docker compose up -d --build
 
 echo -e " ${GREEN}✔${RESET} Docker Compose started."
 

@@ -7,10 +7,8 @@ import { Control } from '../../utils/control';
 const REDIS_URL = process.env.REDIS_URL;
 if (!REDIS_URL) throw new Error('REDIS_URL is not defined');
 
-const keyPrefix = 'scheduler:';
 const conn = new Redis(REDIS_URL, {
   maxRetriesPerRequest: null,
-  keyPrefix,
 });
 
 declare module 'fastify' {
@@ -20,15 +18,15 @@ declare module 'fastify' {
 }
 
 const v1Routes: FastifyPluginAsyncZod = async (fastify) => {
-  const sec = new Security(conn);
+  const sec = new Security(conn, 'scheduler-security');
   await sec.start();
-  const control = new Control(sec, conn, fastify.log);
+  const control = new Control(sec, conn, 'scheduler-control', fastify.log);
 
   fastify.get('/health', async function handler(_, reply) {
     if (conn.status === 'ready') {
       return reply.code(200).send();
     }
-    reply.code(500).send();
+    return reply.code(500).send();
   });
 
   fastify.get('/.well-known/jwks.json', async (_, reply) => {
@@ -44,7 +42,7 @@ const v1Routes: FastifyPluginAsyncZod = async (fastify) => {
       return { keys: [jwk] };
     } catch (err) {
       fastify.log.error(err);
-      reply.code(500).send({ error: 'failed to get jwk' });
+      return reply.code(500).send({ error: 'failed to get jwk' });
     }
   });
 
@@ -67,6 +65,11 @@ const v1Routes: FastifyPluginAsyncZod = async (fastify) => {
     }
 
     request.control = control;
+  });
+
+  fastify.addHook('onClose', async () => {
+    await control.close();
+    await conn.quit();
   });
 
   fastify.register(messagesRoutes, { prefix: '/messages' });

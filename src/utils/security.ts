@@ -7,7 +7,7 @@ import {
   type JWK,
   type JWTPayload,
 } from 'jose';
-import { createHash, timingSafeEqual } from 'crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'crypto';
 
 import { Redis } from 'ioredis';
 
@@ -18,9 +18,11 @@ export class Security {
   private alg = 'Ed25519';
   private kid = 'validate-scheduler';
   private serverToken: string;
+  private prefix: string;
 
-  constructor(conn: Redis) {
+  constructor(conn: Redis, prefix: string) {
     this.conn = conn;
+    this.prefix = prefix;
 
     const apiTokenKey = process.env.API_TOKEN_KEY;
     if (!apiTokenKey) {
@@ -31,33 +33,67 @@ export class Security {
   }
 
   async start() {
-    const [pubJson, privJson] = await Promise.all([
-      this.conn.get('validate-scheduler:publicJwk'),
-      this.conn.get('validate-scheduler:privateJwk'),
-    ]);
+    const publicKeyName = `${this.prefix}:publicJwk`;
+    const privateKeyName = `${this.prefix}:privateJwk`;
+    const lockName = `${this.prefix}:initialization-lock`;
 
-    if (pubJson && privJson) {
-      const pubJwk: JWK = JSON.parse(pubJson);
-      const privJwk: JWK = JSON.parse(privJson);
-
-      this.publicKey = await importJWK(pubJwk, this.alg);
-      this.privateKey = await importJWK(privJwk, this.alg);
-    } else {
-      const { publicKey, privateKey } = await generateKeyPair(this.alg, {
-        extractable: true,
-      });
-      this.publicKey = publicKey;
-      this.privateKey = privateKey;
-
-      const pubJwk = await exportJWK(publicKey);
-      const privJwk = await exportJWK(privateKey);
-      pubJwk.kid = this.kid;
-      privJwk.kid = this.kid;
-
-      await Promise.all([
-        this.conn.set('validate-scheduler:publicJwk', JSON.stringify(pubJwk)),
-        this.conn.set('validate-scheduler:privateJwk', JSON.stringify(privJwk)),
+    while (true) {
+      const [pubJson, privJson] = await Promise.all([
+        this.conn.get(publicKeyName),
+        this.conn.get(privateKeyName),
       ]);
+
+      if (pubJson && privJson) {
+        const pubJwk: JWK = JSON.parse(pubJson);
+        const privJwk: JWK = JSON.parse(privJson);
+
+        this.publicKey = await importJWK(pubJwk, this.alg);
+        this.privateKey = await importJWK(privJwk, this.alg);
+        return;
+      }
+
+      const lockToken = randomUUID();
+      const acquired = await this.conn.set(
+        lockName,
+        lockToken,
+        'PX',
+        10_000,
+        'NX',
+      );
+
+      if (acquired !== 'OK') {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        continue;
+      }
+
+      try {
+        const [existingPubJson, existingPrivJson] = await Promise.all([
+          this.conn.get(publicKeyName),
+          this.conn.get(privateKeyName),
+        ]);
+
+        if (!existingPubJson || !existingPrivJson) {
+          const { publicKey, privateKey } = await generateKeyPair(this.alg, {
+            extractable: true,
+          });
+          const pubJwk = await exportJWK(publicKey);
+          const privJwk = await exportJWK(privateKey);
+          pubJwk.kid = this.kid;
+          privJwk.kid = this.kid;
+
+          await Promise.all([
+            this.conn.set(publicKeyName, JSON.stringify(pubJwk)),
+            this.conn.set(privateKeyName, JSON.stringify(privJwk)),
+          ]);
+        }
+      } finally {
+        await this.conn.eval(
+          "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+          1,
+          lockName,
+          lockToken,
+        );
+      }
     }
   }
 
@@ -75,13 +111,6 @@ export class Security {
   ): Promise<string> {
     const digest = createHash('sha256').update(body).digest('base64url');
 
-    console.log(
-      `Created SignJWT with digest: ${digest} |
-        claims: ${JSON.stringify(extraClaims)} |
-        audience: ${audience} |
-        body: ${body} |
-        ttl: ${ttl}`,
-    );
     return await new SignJWT({
       ...extraClaims,
       digest,

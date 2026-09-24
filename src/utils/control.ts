@@ -50,16 +50,23 @@ class Control {
   workers: Record<string, { worker: Worker; queue: Queue; closing?: boolean }> =
     {};
   conn: Redis;
+  prefix: string;
   sec: Security;
   defaultDelay = 5 * 60 * 1000; // 5 minutes
   removeOnCompleteAge = 24 * 60 * 60 * 1000; // 24 hours
   removeOnFailAge = 7 * 24 * 60 * 60 * 1000; // 7 days
   logger: FastifyBaseLogger;
 
-  constructor(sec: Security, connection: Redis, log: FastifyBaseLogger) {
+  constructor(
+    sec: Security,
+    connection: Redis,
+    prefix: string,
+    log: FastifyBaseLogger,
+  ) {
     this.conn = connection;
     this.sec = sec;
     this.logger = log;
+    this.prefix = prefix;
   }
 
   private flowControlKey(flowControl?: Message['flowControl']) {
@@ -74,6 +81,7 @@ class Control {
   ) {
     const queue = new Queue(flowKey, {
       connection: this.conn,
+      prefix: this.prefix,
       defaultJobOptions: {
         removeOnComplete: { age: this.removeOnCompleteAge },
         removeOnFail: { age: this.removeOnFailAge },
@@ -176,6 +184,7 @@ class Control {
       },
       {
         connection: this.conn,
+        prefix: this.prefix,
         concurrency: flowControl?.concurrency || 1,
         limiter: flowControl
           ? { max: flowControl.rate, duration: flowControl.period }
@@ -215,27 +224,53 @@ class Control {
   }
 
   async cancelJob(jobId: string) {
-    const keys = await this.conn.keys(`bull:*:${jobId}`);
+    const stream = this.conn.scanStream({
+      match: `${this.prefix}:*:${jobId}`,
+      count: 100,
+    });
 
-    if (keys.length === 0) {
-      this.logger.warn(
-        ` Message | Status : 🔴 Not found | Message ID: ${jobId}`,
-      );
-      return;
-    }
+    for await (const batch of stream) {
+      for (const key of batch as string[]) {
+        const queuePrefix = `${this.prefix}:`;
+        if (!key.startsWith(queuePrefix)) continue;
 
-    for (const key of keys) {
-      const queueName = key.split(':')[1];
-      const queue = new Queue(queueName, { connection: this.conn });
-      const job = await queue.getJob(jobId);
-      if (job) {
+        const queueName = key.slice(queuePrefix.length).split(':', 1)[0];
+        const queue = new Queue(queueName, {
+          connection: this.conn,
+          prefix: this.prefix,
+        });
+        const job = await queue.getJob(jobId);
+
+        if (!job) {
+          await queue.close();
+          continue;
+        }
+
         await job.remove();
+        await queue.close();
         this.logger.info(
           `Message | Status: 📵 Cancelled | Message ID: ${jobId}`,
         );
         return jobId;
       }
     }
+
+    {
+      this.logger.warn(
+        ` Message | Status : 🔴 Not found | Message ID: ${jobId}`,
+      );
+      return;
+    }
+  }
+
+  async close() {
+    await Promise.all(
+      Object.values(this.workers).map(async ({ worker, queue }) => {
+        await worker.close();
+        await queue.close();
+      }),
+    );
+    this.workers = {};
   }
 }
 
