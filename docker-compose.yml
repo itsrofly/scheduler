@@ -3,6 +3,11 @@ version: '3.8'
 services:
   scheduler:
     build: .
+    depends_on:
+      redis:
+        condition: service_healthy
+      loki:
+        condition: service_started
     ports:
       - 8000:8000
     environment:
@@ -12,7 +17,7 @@ services:
 
     healthcheck:
       test: >
-        sh -c "curl -f http://localhost:8000/api/v1/health"
+        sh -c "wget --spider --quiet http://127.0.0.1:8000/api/v1/health"
       interval: 20s
       timeout: 5s
       retries: 3

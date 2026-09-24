@@ -26,7 +26,7 @@ const v1Routes: FastifyPluginAsyncZod = async (fastify) => {
 
   fastify.get('/health', async function handler(_, reply) {
     if (conn.status === 'ready') {
-      reply.code(200).send();
+      return reply.code(200).send();
     }
     reply.code(500).send();
   });
