@@ -1,6 +1,7 @@
 {
     "name": "@scheduler/source",
     "packageManager": "yarn@4.18.1",
+    "private": true,
     "scripts": {
         "build": "yarn workspaces foreach -Apt run build",
         "test": "FORCE_COLOR=1 yarn workspaces foreach -Apt run test",

@@ -1,6 +1,7 @@
 {
     "name": "@scheduler/scheduler-js",
     "type": "module",
+    "private": false,
     "scripts": {
         "build": "tsc -p tsconfig.json",
         "clean": "rm -rf dist"

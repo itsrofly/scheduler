@@ -2,6 +2,7 @@
   "name": "@scheduler/api",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "private": true,
   "packageManager": "yarn@4.9.2",
   "scripts": {
     "build": "tsc -p tsconfig.json",
