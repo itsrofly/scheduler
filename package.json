@@ -1,0 +1,24 @@
+{
+    "name": "@scheduler/source",
+    "packageManager": "yarn@4.18.1",
+    "scripts": {
+        "build": "yarn workspaces foreach -Apt run build",
+        "test": "FORCE_COLOR=1 yarn workspaces foreach -Apt run test",
+        "clean": "yarn workspaces foreach -Apt run clean"
+    },
+    "workspaces": [
+        "packages/*",
+        "tests/*"
+    ],
+    "dependencies": {
+        "jose": "catalog:",
+        "zod": "catalog:"
+    },
+    "devDependencies": {
+        "@types/jest": "catalog:",
+        "@types/node": "catalog:",
+        "jest": "catalog:",
+        "ts-jest": "catalog:",
+        "typescript": "catalog:"
+    }
+}

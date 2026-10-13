@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 8
+  version: 10
   cacheKey: 10c0
 
 "@babel/code-frame@npm:^7.0.0, @babel/code-frame@npm:^7.27.1, @babel/code-frame@npm:^7.29.7":
@@ -955,18 +955,44 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@scheduler/testing@workspace:.":
+"@scheduler/scheduler-js@workspace:*, @scheduler/scheduler-js@workspace:packages/core":
   version: 0.0.0-use.local
-  resolution: "@scheduler/testing@workspace:."
+  resolution: "@scheduler/scheduler-js@workspace:packages/core"
   dependencies:
-    "@types/jest": "npm:^30.0.0"
-    "@types/node": "npm:^26.6.5"
-    jest: "npm:^30.5.2"
-    prettier: "npm:^3.6.2"
-    ts-jest: "npm:^29.4.14"
-    ts-node: "npm:^10.9.2"
-    ts-node-dev: "npm:^2.0.0"
-    typescript: "npm:^5.9.2"
+    "@types/node": "catalog:"
+    jose: "catalog:"
+    typescript: "catalog:"
+    zod: "catalog:"
+  languageName: unknown
+  linkType: soft
+
+"@scheduler/source@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@scheduler/source@workspace:."
+  dependencies:
+    "@types/jest": "catalog:"
+    "@types/node": "catalog:"
+    jest: "catalog:"
+    jose: "catalog:"
+    ts-jest: "catalog:"
+    typescript: "catalog:"
+    zod: "catalog:"
+  languageName: unknown
+  linkType: soft
+
+"@scheduler/testing@workspace:tests/integration":
+  version: 0.0.0-use.local
+  resolution: "@scheduler/testing@workspace:tests/integration"
+  dependencies:
+    "@scheduler/scheduler-js": "workspace:*"
+    "@types/jest": "catalog:"
+    "@types/node": "catalog:"
+    jest: "catalog:"
+    prettier: "catalog:"
+    ts-jest: "catalog:"
+    ts-node: "catalog:"
+    ts-node-dev: "catalog:"
+    typescript: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -2784,6 +2810,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jose@npm:^6.1.0":
+  version: 6.2.12
+  resolution: "jose@npm:6.2.12"
+  checksum: 10c0/e8582b946fabcae228819982dda4849908c353e9cb098f02f773635aa0d2f4917f17484c7441b8d526e564013b4cf96951455c94f81d0a39ee765bad44ce293d
+  languageName: node
+  linkType: hard
+
 "js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -3309,7 +3342,7 @@ __metadata:
 
 "resolve@patch:resolve@npm%3A^1.0.0#optional!builtin<compat/resolve>":
   version: 1.22.13
-  resolution: "resolve@patch:resolve@npm%3A1.22.13#optional!builtin<compat/resolve>::version=1.22.13&hash=c3c19d"
+  resolution: "resolve@patch:resolve@npm%3A1.22.13#optional!builtin<compat/resolve>::version=1.22.13&hash=9bd1a5"
   dependencies:
     es-errors: "npm:^1.3.0"
     is-core-module: "npm:^2.17.0"
@@ -3317,7 +3350,7 @@ __metadata:
     supports-preserve-symlinks-flag: "npm:^1.0.0"
   bin:
     resolve: bin/resolve
-  checksum: 10c0/6f10a5245bc8203b5c4d42528c2e221d32b6d3d9f07bb6c264205459ef7dae8318783f0f06a0add8b5e23a9101fdbd2e56267324bf3cb151578e91cf2e00febb
+  checksum: 10c0/bc58ee02e647a4250453eeb067796bdc087f6a89d4d5780bfe479f402ec11b9461babc155a6452020b56f3845cf49b1afd9c95fe3fc8347cba6567aa9b10c106
   languageName: node
   linkType: hard
 
@@ -4016,5 +4049,12 @@ __metadata:
   version: 0.1.0
   resolution: "yocto-queue@npm:0.1.0"
   checksum: 10c0/dceb44c28578b31641e13695d200d34ec4ab3966a5729814d5445b194933c096b7ced71494ce53a0e8820685d1d010df8b2422e5bf2cdea7e469d97ffbea306f
+  languageName: node
+  linkType: hard
+
+"zod@npm:^4.1.11":
+  version: 4.6.7
+  resolution: "zod@npm:4.6.7"
+  checksum: 10c0/4ce2eb14034317b7254e347ca37b5ad591cf8333147030cf05b9b5d31692d45073f7f2747aa50cf8c6b29012194d2b22978cecc89969cf34a0d18e89d0ee7d7b
   languageName: node
   linkType: hard

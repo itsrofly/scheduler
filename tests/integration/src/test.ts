@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 import { once } from 'node:events';
 
-describe('sum module', () => {
+describe('Server', () => {
   const hostname = '127.0.0.1';
   const port = 3000;
 
@@ -15,9 +15,14 @@ describe('sum module', () => {
     console.log(`Server running at http://${hostname}:${port}/`);
   });
 
-  test('adds 1 + 2 to equal 3', async () => {
-    await once(server, 'listening');
-    expect(1 + 2).toBe(3);
+
+  test('Server is listening', async () => {
+    const pendingPromise = new Promise(async (resolve, reject) => {
+      await once(server, 'listening');
+      resolve(true)
+    });
+
+    expect(await pendingPromise).toBe(true);
     server.close()
   });
 });
