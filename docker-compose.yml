@@ -1,5 +1,5 @@
 services:
-  scheduler:
+  api:
     image: scheduler/api
     build:
       context: .
@@ -19,9 +19,22 @@ services:
     healthcheck:
       test: >
         sh -c "wget --spider --quiet http://127.0.0.1:8000/api/v1/health"
-      interval: 20s
-      timeout: 5s
-      retries: 3
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  tests:
+    image: scheduler/tests
+    build:
+      context: .
+      dockerfile: tests/integration/Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      HOSTNAME: tests
+      SCHEDULER_URL: http://api:8000
+      SCHEDULER_TOKEN_KEY: ${API_TOKEN_KEY:?}
 
   redis:
     image: redis:latest
