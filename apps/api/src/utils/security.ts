@@ -105,11 +105,11 @@ export class Security {
 
   async signJWT(
     audience: string,
-    body: string,
+    body: string | undefined = undefined,
     extraClaims: Record<string, unknown> = {},
     ttl = '120s',
   ): Promise<string> {
-    const digest = createHash('sha256').update(body).digest('base64url');
+    const digest = createHash('sha256').update(body || '').digest('base64url');
 
     return await new SignJWT({
       ...extraClaims,
@@ -125,14 +125,14 @@ export class Security {
 
   async verifyJWT(
     token: string,
-    body: string,
+    body: string | undefined = undefined,
     expectedAudience: string,
   ): Promise<JWTPayload> {
     const { payload } = await jwtVerify(token, this.publicKey!, {
       audience: expectedAudience,
     });
 
-    const digest = createHash('sha256').update(body).digest('base64url');
+    const digest = createHash('sha256').update(body || '').digest('base64url');
 
     if (payload.digest !== digest) {
       throw new Error(

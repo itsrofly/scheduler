@@ -44,7 +44,7 @@ export default class Scheduler {
 
     async verifyMessage(
         token: string,
-        body: string,
+        body: string | undefined = undefined,
         expectedAudience: string,
     ): Promise<JWTPayload> {
         const pubkey = await this.getPubKey();
@@ -57,7 +57,7 @@ export default class Scheduler {
             audience: expectedAudience,
         });
 
-        const digest = createHash('sha256').update(body).digest('base64url');
+        const digest = createHash('sha256').update(body || '').digest('base64url');
 
         if (payload.digest !== digest) {
             throw new Error(

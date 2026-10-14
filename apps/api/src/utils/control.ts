@@ -97,14 +97,14 @@ class Control {
       async (job: Job) => {
         const message = job.data as Message;
         this.logger.info(
-          `Message | Message ID: ${job.id} | Status: 🌐 Active | Data: ${JSON.stringify(message)}`,
+          `Message | Message ID: ${job.id} | Status: 🌐 Active | Data: ${message}`,
         );
 
         try {
           const createdAt = job.timestamp;
           const startedAt = Date.now();
 
-          const body = JSON.stringify(message.body ?? '');
+          const body = message.body ? JSON.stringify(message.body ?? '') : undefined;
           const jwt = await this.sec.signJWT(message.url, body);
           const headers = {
             'Message-Id': job.id!,
@@ -168,15 +168,17 @@ class Control {
           );
         } catch (err) {
           if (
-            err instanceof Error &&
-            err.message.startsWith('Error: Failed Request')
+            err instanceof Error
           ) {
-            this.logger.warn(
-              `Message | Status: 🔴 Failed | Message ID: ${job.id} | Error: ${err.message} | Data: ${message}`,
-            );
-          } else {
+            if (err.message.startsWith('Error: Failed Request')) {
+              this.logger.warn(
+                `Message | Status: 🔴 Failed Request | Message ID: ${job.id} | Error: ${err.message} | Data: ${message}`,
+              );
+              return
+            }
+
             this.logger.error(
-              `Message | Status: 📛 Failed | Message ID: ${job.id} | Data: ${message}`,
+              `Message | Status: 📛 Failed | Message ID: ${job.id} | Error: ${err.message} | Data: ${message} `,
             );
           }
           throw err;
