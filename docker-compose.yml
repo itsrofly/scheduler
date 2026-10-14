@@ -1,5 +1,6 @@
 services:
   scheduler:
+    image: scheduler/api
     build:
       context: .
       dockerfile: apps/api/Dockerfile

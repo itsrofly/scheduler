@@ -3,12 +3,15 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 jest"
+        "dep:run": "yarn dep:clean && chmod +x ./scripts/run.sh && ./scripts/run.sh",
+        "dep:clean": "chmod +x ./scripts/clean.sh && ./scripts/clean.sh",
+        "test": "yarn dep:run && NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 jest && yarn dep:clean"
     },
     "devDependencies": {
         "@scheduler/scheduler-js": "workspace:*",
         "@types/jest": "catalog:",
         "@types/node": "catalog:",
+        "dotenv": "catalog:",
         "jest": "catalog:",
         "prettier": "catalog:",
         "ts-jest": "catalog:",

@@ -1077,7 +1077,7 @@ __metadata:
   dependencies:
     "@types/node": "catalog:"
     bullmq: "npm:^5.58.9"
-    dotenv: "npm:^17.2.2"
+    dotenv: "catalog:"
     fastify: "npm:^5.6.1"
     fastify-type-provider-zod: "npm:^6.0.0"
     ioredis: "npm:^5.8.0"
@@ -1116,6 +1116,7 @@ __metadata:
     "@scheduler/scheduler-js": "workspace:*"
     "@types/jest": "catalog:"
     "@types/node": "catalog:"
+    dotenv: "catalog:"
     jest: "catalog:"
     prettier: "catalog:"
     ts-jest: "catalog:"

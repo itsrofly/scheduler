@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "dotenv": "catalog:",
     "prettier": "catalog:",
     "ts-node": "catalog:",
     "ts-node-dev": "catalog:",
@@ -18,7 +19,6 @@
   },
   "dependencies": {
     "bullmq": "^5.58.9",
-    "dotenv": "^17.2.2",
     "fastify": "^5.6.1",
     "fastify-type-provider-zod": "^6.0.0",
     "ioredis": "^5.8.0",

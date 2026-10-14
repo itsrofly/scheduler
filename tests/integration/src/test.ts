@@ -1,5 +1,6 @@
 import { createServer } from 'node:http'
 import { once } from 'node:events';
+import Scheduler from '@scheduler/scheduler-js'
 
 describe('Server', () => {
   const hostname = '127.0.0.1';
@@ -10,6 +11,8 @@ describe('Server', () => {
     res.setHeader('Content-Type', 'text/plain');
     res.end('Hello World');
   });
+
+  const scheduler = new Scheduler()
 
   server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);

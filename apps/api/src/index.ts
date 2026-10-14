@@ -1,4 +1,7 @@
-import 'dotenv/config';
+if (process.env.NODE_ENV !== 'production') {
+  // Load environment variables from a `.env` file in dev / test
+  require('dotenv').config();
+}
 
 import Fastify from 'fastify';
 import v1Routes from './routes/v1';

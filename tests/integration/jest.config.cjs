@@ -1,4 +1,5 @@
-// jest.config.js
+require('dotenv').config();
+
 module.exports = {
   // Tell Jest to use ts-jest for *.ts / *.tsx files
   preset: 'ts-jest',          // <== this is the easiest line
