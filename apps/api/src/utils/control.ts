@@ -274,4 +274,4 @@ class Control {
   }
 }
 
-export { Control, MessageSchema, Message };
+export { Control, MessageSchema, type Message };

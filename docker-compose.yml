@@ -1,6 +1,8 @@
 services:
   scheduler:
-    build: .
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     depends_on:
       redis:
         condition: service_healthy
@@ -25,7 +27,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: [ 'CMD', 'redis-cli', 'ping' ]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -35,7 +37,6 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - loki_data:/loki
-
   # grafana:
   #   image: grafana/grafana:latest
   #   ports:

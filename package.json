@@ -8,18 +8,8 @@
         "clean": "yarn workspaces foreach -Apt run clean"
     },
     "workspaces": [
+        "apps/*",
         "packages/*",
         "tests/*"
-    ],
-    "dependencies": {
-        "jose": "catalog:",
-        "zod": "catalog:"
-    },
-    "devDependencies": {
-        "@types/jest": "catalog:",
-        "@types/node": "catalog:",
-        "jest": "catalog:",
-        "ts-jest": "catalog:",
-        "typescript": "catalog:"
-    }
+    ]
 }
