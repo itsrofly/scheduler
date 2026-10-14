@@ -3,6 +3,7 @@
     "packageManager": "yarn@4.18.1",
     "private": true,
     "scripts": {
+        "docker:up": "chmod +x ./scripts/docker-up.sh && ./scripts/docker-up.sh",
         "build": "yarn workspaces foreach -Apt run build",
         "test": "FORCE_COLOR=1 yarn workspaces foreach -Apt run test",
         "clean": "yarn workspaces foreach -Apt run clean"

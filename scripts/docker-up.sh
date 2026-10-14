@@ -3,20 +3,13 @@
 GREEN='\033[0;32m'
 RESET='\033[0m'
 
-echo "Generating API token..." && \
 API_TOKEN_KEY=$(openssl rand -hex 32) && \
 echo "API_TOKEN_KEY=${API_TOKEN_KEY}" > .env
 
-echo " Starting Docker Compose..."
 docker compose up -d --build && \
-echo -e " ${GREEN}✔${RESET} Docker Compose started." && \
-
-echo && \
 
 echo -e " ${GREEN}✔${RESET} Access the API at:" && \
-echo -e " ${GREEN}http://localhost:8000${RESET}" && \
-
-echo
+echo -e " ${GREEN}http://localhost:8000${RESET}" &&
 
 echo -e " ${GREEN}✔${RESET} Use this api token:" && \
 echo -e " ${GREEN}${API_TOKEN_KEY}${RESET}"
