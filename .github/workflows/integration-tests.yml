@@ -1,0 +1,27 @@
+permissions:
+  contents: read
+  
+on:
+  push:
+    branches:
+      - release/dev
+
+jobs:
+  tests:
+    name: Run integration tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up Docker Compose
+        uses: docker/setup-compose-action@v2
+        with:
+          version: latest
+
+      - name: Run integration tests
+        run: ./scripts/docker/test.sh
