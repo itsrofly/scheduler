@@ -7,13 +7,13 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      loki:
-        condition: service_started
+      # loki:
+      #   condition: service_started
     ports:
       - 8000:8000
     environment:
       REDIS_URL: redis://redis:6379
-      LOKI_URL: http://loki:3100
+      # LOKI_URL: http://loki:3100
       API_TOKEN_KEY: ${API_TOKEN_KEY:?} # Use openssl rand -hex 32
 
     healthcheck:
@@ -45,12 +45,11 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
-
-  loki:
-    image: grafana/loki:latest
-    command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - loki_data:/loki
+  # loki:
+  #   image: grafana/loki:latest
+  #   command: -config.file=/etc/loki/local-config.yaml
+  #   volumes:
+  #     - loki_data:/loki
   # grafana:
   #   image: grafana/grafana:latest
   #   ports:
@@ -73,5 +72,4 @@ services:
   #     GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:?itsrofly}
 
 volumes:
-  redis-data:
-  loki_data:
+  redis-data: #  loki_data:

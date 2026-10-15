@@ -10,6 +10,7 @@ COPY packages/core packages/core
 COPY tests/integration/ tests/integration/
 
 RUN yarn workspaces focus @scheduler/testing
+RUN yarn workspaces foreach -Rpt --from @scheduler/testing run build
 
 WORKDIR /usr/src/app/tests/integration
 
