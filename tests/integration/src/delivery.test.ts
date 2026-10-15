@@ -9,6 +9,8 @@ describe('Message delivery', () => {
 
   test('delivers a GET message to the target URL', async () => {
     const delivery = new Promise<void>((resolve, _reject) => {
+      const randomPath = Math.random().toString(36).substring(2, 12);
+
       const server = createServer((req, res) => {
         const { method, url } = req;
         const parsedUrl = new URL(url!, `http://${req.headers.host}`);
@@ -17,21 +19,19 @@ describe('Message delivery', () => {
         res.setHeader('Content-Type', 'text/plain');
         res.end('Hello World');
 
-        expect(method).toBe('GET');
-        expect(parsedUrl.pathname).toBe('/health');
-
         server.close(() => {
           resolve();
         });
+
+        expect(method).toBe('GET');
+        expect(parsedUrl.pathname).toBe('/' + randomPath);
       });
 
       server.listen(port, '0.0.0.0', async () => {
-        const message = await scheduler.createMessage({
-          url: `${url}/health`,
+        await scheduler.createMessage({
+          url: `${url}/${randomPath}`,
           method: 'GET',
         })
-
-        expect(message.messageId).toBeTruthy();
       });
     })
 

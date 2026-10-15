@@ -11,4 +11,6 @@ COPY tests/integration/ tests/integration/
 
 RUN yarn workspaces focus @scheduler/testing
 
+WORKDIR /usr/src/app/tests/integration
+
 CMD ["yarn", "test"]

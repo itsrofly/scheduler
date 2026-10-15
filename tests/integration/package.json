@@ -3,7 +3,7 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 jest"
+        "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 FORCE_COLOR=1 jest"
     },
     "devDependencies": {
         "@scheduler/scheduler-js": "workspace:*",

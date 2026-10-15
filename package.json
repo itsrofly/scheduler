@@ -5,8 +5,9 @@
     "scripts": {
         "docker:up": "chmod +x ./scripts/docker/up.sh && ./scripts/docker/up.sh",
         "docker:down": "chmod +x ./scripts/docker/down.sh && ./scripts/docker/down.sh",
+        "docker:test": "docker compose up --build --exit-code-from tests",
         "build": "yarn workspaces foreach -Apt run build",
-        "test": "FORCE_COLOR=1 yarn workspaces foreach -At run test",
+        "test": "yarn workspaces foreach -At run test",
         "clean": "yarn workspaces foreach -Apt run clean"
     },
     "workspaces": [
