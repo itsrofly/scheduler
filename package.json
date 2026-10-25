@@ -1,5 +1,5 @@
 {
-    "name": "@scheduler/source",
+    "name": "scheduler",
     "packageManager": "yarn@4.18.1",
     "private": true,
     "scripts": {
@@ -7,7 +7,7 @@
         "docker:down": "chmod +x ./scripts/docker/down.sh && ./scripts/docker/down.sh",
         "docker:test": "chmod +x ./scripts/docker/test.sh && ./scripts/docker/test.sh",
         "build": "yarn workspaces foreach -Apt run build",
-        "build:packages": "yarn workspaces foreach -Rpt --from packages/* run build",
+        "build:packages": "yarn workspaces foreach -Rpt --from \"packages/*\" run build",
         "test": "yarn workspaces foreach -At run test",
         "clean": "yarn workspaces foreach -Apt run clean",
         "postinstall": "yarn build:packages"
