@@ -1,6 +1,6 @@
 import { Bench } from 'tinybench'
 
-import { plus100 } from '../index.js'
+import { plus100 } from '@scheduler/memory-manager'
 
 function add(a: number) {
   return a + 100

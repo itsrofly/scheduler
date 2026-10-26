@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "dist",
     "types": [
       "node",
       "@types/jest"

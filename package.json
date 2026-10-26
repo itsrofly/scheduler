@@ -8,7 +8,7 @@
     "scripts": {
         "docker:up": "chmod +x ./scripts/docker/up.sh && ./scripts/docker/up.sh",
         "docker:down": "chmod +x ./scripts/docker/down.sh && ./scripts/docker/down.sh",
-        "docker:test": "chmod +x ./scripts/docker/test.sh && ./scripts/docker/test.sh",
+        "itest": "chmod +x ./scripts/docker/test.sh && ./scripts/docker/test.sh",
         "build": "yarn workspaces foreach -Apt run build",
         "bench": "yarn workspaces foreach -At run bench",
         "test": "yarn workspaces foreach -At run test",

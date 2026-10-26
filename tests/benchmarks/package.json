@@ -1,0 +1,13 @@
+{
+  "name": "@scheduler/benchmarks",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "bench": "FORCE_COLOR=1 node --import @oxc-node/core/register src/bench.ts"
+  },
+  "devDependencies": {
+    "@oxc-node/core": "catalog:",
+    "@scheduler/memory-manager": "workspace:*",
+    "tinybench": "^6.2.0"
+  }
+}
