@@ -1,0 +1,33 @@
+{
+  "name": "@scheduler/memory-manager",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./*.d.ts",
+      "import": "./index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "napi": {
+    "binaryName": "memory-manager",
+    "targets": [
+      "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu"
+    ]
+  },
+  "scripts": {
+    "bench": "FORCE_COLOR=1 node --import @oxc-node/core/register benchmark/bench.ts",
+    "build": "napi build --platform --release",
+    "clean": "cargo clean && rm -fr index.js index.d.ts *.node || true",
+    "build:debug": "napi build --platform"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.9.1",
+    "@oxc-node/core": "^1.0.0",
+    "tinybench": "^6.2.0",
+    "typescript": "catalog:"
+  }
+}

@@ -116,6 +116,8 @@
     },
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "bench",
+        "__test__"
     ]
 }

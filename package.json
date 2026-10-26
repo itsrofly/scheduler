@@ -1,14 +1,18 @@
 {
     "name": "scheduler",
     "packageManager": "yarn@4.18.1",
+    "engines": {
+        "node": ">= 22.14.0 < 23 || >= 23.6.0"
+    },
     "private": true,
     "scripts": {
         "docker:up": "chmod +x ./scripts/docker/up.sh && ./scripts/docker/up.sh",
         "docker:down": "chmod +x ./scripts/docker/down.sh && ./scripts/docker/down.sh",
         "docker:test": "chmod +x ./scripts/docker/test.sh && ./scripts/docker/test.sh",
         "build": "yarn workspaces foreach -Apt run build",
-        "build:packages": "yarn workspaces foreach -Rpt --from \"packages/*\" run build",
+        "bench": "yarn workspaces foreach -At run bench",
         "test": "yarn workspaces foreach -At run test",
+        "build:packages": "yarn workspaces foreach -Rpt --from \"packages/*\" run build",
         "clean": "yarn workspaces foreach -Apt run clean",
         "postinstall": "yarn build:packages"
     },
