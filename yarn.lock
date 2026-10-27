@@ -2571,14 +2571,14 @@ __metadata:
   resolution: "@scheduler/benchmarks@workspace:tests/benchmarks"
   dependencies:
     "@oxc-node/core": "catalog:"
-    "@scheduler/memory-manager": "workspace:*"
+    "@scheduler/loader": "workspace:*"
     tinybench: "npm:^6.2.0"
   languageName: unknown
   linkType: soft
 
-"@scheduler/memory-manager@workspace:*, @scheduler/memory-manager@workspace:packages/memory-manager":
+"@scheduler/loader@workspace:*, @scheduler/loader@workspace:packages/loader":
   version: 0.0.0-use.local
-  resolution: "@scheduler/memory-manager@workspace:packages/memory-manager"
+  resolution: "@scheduler/loader@workspace:packages/loader"
   dependencies:
     "@napi-rs/cli": "npm:^3.9.1"
     "@oxc-node/core": "catalog:"

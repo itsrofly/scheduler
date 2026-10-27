@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "@oxc-node/core": "catalog:",
-    "@scheduler/memory-manager": "workspace:*",
+    "@scheduler/loader": "workspace:*",
     "tinybench": "^6.2.0"
   }
 }

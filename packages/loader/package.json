@@ -1,0 +1,31 @@
+{
+    "name": "@scheduler/loader",
+    "version": "1.0.0",
+    "private": true,
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "napi": {
+        "binaryName": "loader",
+        "targets": [
+            "aarch64-apple-darwin",
+            "x86_64-apple-darwin",
+            "x86_64-pc-windows-msvc",
+            "x86_64-unknown-linux-gnu"
+        ]
+    },
+    "scripts": {
+        "build": "napi build --manifest-path Cargo.toml --package api --output-dir ./dist --platform --release",
+        "clean": "cargo clean && rm -fr dist",
+        "build:debug": "napi build --platform"
+    },
+    "devDependencies": {
+        "@napi-rs/cli": "^3.9.1",
+        "@oxc-node/core": "catalog:",
+        "typescript": "catalog:"
+    }
+}

@@ -1,7 +1,7 @@
 [package]
-authors = ["LongYinan <lynweklm@gmail.com>"]
+authors = ["Rofly <me@itsrofly.com>"]
 edition = "2021"
-name = "memory_manager"
+name = "api"
 version = "0.1.0"
 
 [lib]
